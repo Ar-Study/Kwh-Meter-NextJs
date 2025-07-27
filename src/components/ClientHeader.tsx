@@ -1,95 +1,75 @@
 "use client";
 
-import Link from "next/link";
-import { signOut } from "next-auth/react";
-import toast from "react-hot-toast";
-import { useRouter } from "next/navigation";
-import { ModeToggle } from "./ToggleTheme";
-import Image from "next/image";
-import { Session } from "next-auth";
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { MenuIcon, Settings, EyeOff, Eye } from "lucide-react";
 
-export const ClientHeader = ({ session }: { session: Session | null }) => {
-  const router = useRouter();
+interface DashboardHeaderProps {
+  isAdmin: boolean;
+  isConnected: boolean;
+  hideCostWithoutBooster: boolean;
+  onToggleHideCost: () => void;
+  onOpenCalibration: () => void;
+  onToggleSidebar: () => void;
+}
 
-  const handleLogout = async () => {
-    try {
-      await signOut({ redirect: false });
-      toast.success("Berhasil logout");
-      setTimeout(() => router.push("/login"), 1000);
-    } catch (error) {
-      toast.error(`Gagal logout: ${error}`);
-    }
-  };
-
+export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
+  isAdmin,
+  isConnected,
+  hideCostWithoutBooster,
+  onToggleHideCost,
+  onOpenCalibration,
+  onToggleSidebar,
+}) => {
   return (
-    <header className="header bg-natural text-natural-content flex justify-items-start place-content-around items-center mx-auto px-8 py-3 top-0 w-full z-50">
-      <Image
-        src="/AHC.svg"
-        alt="AHC Logo"
-        className="dark:invert p-2 gap-3 mr-8 flex-nowrap items-center justify-start"
-        width={180}
-        height={48}
-        priority
-      />
-      <div className="flex h-14 font-bold mx-auto w-full items-center px-4 justify-between">
-        <a className="text-xl text-natural-content">Energy Meter</a>
+    <header className="flex justify-between items-center mb-8">
+      <div>
+        <h1 className="text-2xl font-bold">Electricity Monitoring Dashboard</h1>
+        <p className="text-muted-foreground mt-1">
+          {isAdmin
+            ? "Monitor real-time electricity usage with live cost calculations and calibration."
+            : "Track your electricity consumption with real-time cost estimates."}
+        </p>
+        {!isConnected && (
+          <p className="text-red-500 text-sm mt-1">
+            ⚠️ MQTT connection not established
+          </p>
+        )}
       </div>
 
-      <nav className="flex h-14 mx-auto w-full items-center justify-between">
-        <ul className="flex space-x-4">
-          {session ? (
-            <>
-              <li>
-                <Link href="/" className="text-xl hover:font-bold">
-                  Home
-                </Link>
-              </li>
-              <li>
-                <Link href="/profil" className="text-xl hover:font-bold">
-                  Profil
-                </Link>
-              </li>
-              {session.user?.role === "admin" ? (
-                <>
-                  <li>
-                    <Link href="/akun" className="text-xl hover:font-bold">
-                      Manajemen Akun
-                    </Link>
-                  </li>
-                  <li>
-                    <Link href="/laporan" className="text-xl hover:font-bold">
-                      Laporan
-                    </Link>
-                  </li>
-                </>
+      <div className="flex items-center gap-4">
+        {isAdmin && (
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onToggleHideCost}
+              className="flex items-center gap-2"
+            >
+              {hideCostWithoutBooster ? (
+                <Eye size={16} />
               ) : (
-                <li>
-                  <Link href="/laporan" className="text-xl hover:font-bold">
-                    Laporan
-                  </Link>
-                </li>
+                <EyeOff size={16} />
               )}
-              <li>
-                <button
-                  onClick={handleLogout}
-                  className="text-xl hover:font-bold"
-                >
-                  SignOut
-                </button>
-              </li>
-            </>
-          ) : (
-            <li>
-              <Link href="/login" className="text-xl hover:font-bold">
-                SignIn
-              </Link>
-            </li>
-          )}
-        </ul>
-      </nav>
-
-      <div className="ml-4">
-        <ModeToggle />
+              {hideCostWithoutBooster ? "Tampilkan" : "Sembunyikan"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenCalibration}
+              className="flex items-center gap-2"
+            >
+              <Settings size={16} />
+              Kalibrasi
+            </Button>
+          </>
+        )}
+        <button
+          className="md:hidden p-2 rounded-md hover:bg-muted"
+          onClick={onToggleSidebar}
+        >
+          <MenuIcon size={20} />
+        </button>
       </div>
     </header>
   );

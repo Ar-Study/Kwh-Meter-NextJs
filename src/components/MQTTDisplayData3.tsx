@@ -5,8 +5,18 @@ import { client } from "../lib/mqtt-client";
 import { Card, CardHeader, CardContent } from "./ui/card";
 import { saveData, SaveHasil, SaveHasilSumber } from "@/app/server/action";
 // import ApexChart from "react-apexcharts";
+import EnhancedStatCard from "./StatusCard";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { ChartContainer, ChartTooltip } from "./ui/chart";
+import {
+  Activity,
+  ChartBarIcon,
+  ChartLineIcon,
+  ChartPieIcon,
+  DollarSign,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
 
 type Candle = {
   month: number; // timestamp
@@ -374,6 +384,9 @@ const MQTTData = () => {
     },
   };
 
+  const isAdmin = true; // Simulating admin state, replace with actual logic
+  const isConnected = true; // Simulating connection state, replace with actual logic
+  const hideCostWithoutBooster = false; // Simulating state, replace with actual logic
   return (
     <div>
       {noDataAlert && (
@@ -381,401 +394,116 @@ const MQTTData = () => {
           ⚠️ 303 Booster Off
         </div>
       )}
-      <div className="grid grid-cols-2 gap-4 p-4">
-        <div className="grid grid-rows-2 gap-4 p-4">
-          <Card className="bg-muted text-natural-content p-4 rounded-lg">
-            <CardHeader>Without Booster</CardHeader>
-            <CardContent>
-              {" "}
-              {formatCurrency(electricalBillHours * persenadd)}
-            </CardContent>
-            {/* <div>
-              <p>Persen Kenaikan (15%/1.15 - 30%/1.30) : </p>
-              <input
-                type="number"
-                value={persenadd}
-                onChange={handlePersenAdd}
-                placeholder="Enter Value"
-                className="mb-1 p-1 border rounded w-1/2"
-                step="0.01"
-              />
-            </div> */}
-          </Card>
-          <Card className="bg-muted text-natural-content p-4 rounded-lg">
-            <CardHeader>With Booster</CardHeader>
-            <CardContent>
-              {formatCurrency(electricalBillHours)}
 
-              {/* Estimasi Saving Sebesar {persenadd * 100 - 100} % */}
-            </CardContent>
-          </Card>
-          <Card className="bg-muted text-natural-content p-4 rounded-lg">
-            <CardHeader>Monthly Energy Usage ({currentMonth})</CardHeader>
-            <CardContent>{monthlyEnergy} kWh</CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-rows-2 gap-4 p-4">
-          <div className="grid grid-cols-3 gap-4 p-4">
-            <Card className="bg-muted text-natural-content p-4 rounded-lg">
-              <CardHeader>Voltage R</CardHeader>
-              <CardContent>
-                {voltageR !== null ? `${voltageR.toFixed(2)} V` : "No data"}
-              </CardContent>
-            </Card>
-            <Card className="bg-muted text-natural-content p-4 rounded-lg">
-              <CardHeader>Voltage S</CardHeader>
-              <CardContent>
-                {voltageS !== null ? `${voltageS.toFixed(2)} V` : "No data"}
-              </CardContent>
-            </Card>
-            <Card className="bg-muted text-natural-content p-4 rounded-lg">
-              <CardHeader>Voltage T</CardHeader>
-              <CardContent>
-                {voltageT !== null ? `${voltageT.toFixed(2)} V` : "No data"}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 p-4">
-            <Card className="bg-muted text-natural-content p-4 rounded-lg">
-              <CardHeader>Current R</CardHeader>
-              <CardContent className="text-center">
-                {aftercurrentR.toFixed(2)}
-                {/* <p className="text-center">+</p> */}
-                {/* <div> */}
-                {/* <p>Kalibrasi :</p> */}
-                {/* <input
-                    type="number"
-                    value={inputKalibrasiR}
-                    onChange={handleInputKalibrasiR}
-                    placeholder="Enter Value"
-                    className="mb-1 p-1 border rounded w-1/2"
-                  /> */}
-                {/* </div>
-
-                <p className="text-center">+</p>
-                <p>Pembagi Ampere :</p>
-                <input
-                  type="number"
-                  value={inputValue1}
-                  onChange={handleInputChangeS}
-                  placeholder="Enter Value"
-                  className="mb-1 p-1 border rounded w-1/2"
-                  step="0.01"
-                /> */}
-              </CardContent>
-            </Card>
-            <Card className="bg-muted text-natural-content p-4 rounded-lg">
-              <CardHeader>Current S</CardHeader>
-              <CardContent className="text-center">
-                {aftercurrentS.toFixed(2)}
-                {/* <p className="text-center">+</p>
-                <p>Kalibrasi :</p>
-                <input
-                  type="number"
-                  value={inputKalibrasiS}
-                  onChange={handleInputKalibrasiS}
-                  placeholder="Enter Value"
-                  className="mb-1 p-1 border rounded w-1/2"
-                />
-                <p className="text-center">+</p>
-                <p>Pembagi Ampere :</p>
-                <input
-                  type="number"
-                  value={inputValue1}
-                  onChange={handleInputChangeS}
-                  placeholder="Enter Value"
-                  className="mb-1 p-1 border rounded w-1/2"
-                  step="0.01"
-                /> */}
-              </CardContent>
-            </Card>
-            <Card className="bg-muted text-natural-content p-4 rounded-lg">
-              <CardHeader>Current T</CardHeader>
-              <CardContent className="text-center">
-                {aftercurrentT.toFixed(2)}
-                {/* <p className="text-center">+</p> */}
-                {/* <p>Kalibrasi :</p> */}
-                {/* <input
-                  type="number"
-                  value={inputKalibrasiT}
-                  onChange={handleInputKalibrasiT}
-                  placeholder="Enter Value"
-                  className="mb-1 p-1 border rounded w-1/2"
-                /> */}
-                {/* <p className="text-center">+</p> */}
-                {/* <p>Pembagi Ampere :</p> */}
-                {/* <input
-                  type="number"
-                  value={inputValue1}
-                  onChange={handleInputChangeS}
-                  placeholder="Enter Value"
-                  className="mb-1 p-1 border rounded w-1/2"
-                  step="0.01"
-                /> */}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 p-4">
-            <Card className="bg-muted text-natural-content p-4 rounded-lg">
-              <CardHeader>Current Time</CardHeader>
-              <CardContent>{realTime}</CardContent>
-            </Card>
-            <Card className="bg-muted text-natural-content p-4 rounded-lg">
-              <CardHeader>Total Energy</CardHeader>
-              <CardContent>
-                {totalEnergy !== null
-                  ? `${totalEnergy.toFixed(2)} kWh`
-                  : "No data"}
-              </CardContent>
-            </Card>
-            <Card className="bg-muted text-natural-content p-4 rounded-lg">
-              <CardHeader>Electrical Bill Per Hour</CardHeader>
-              <CardContent>
-                {electricalBillHours !== null
-                  ? `IDR ${formatCurrency(electricalBillHours)}`
-                  : "No data"}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-          <Card>
-            <CardHeader>Arus R</CardHeader>
-            <CardContent className="h-[300px]">
-              <ChartContainer config={chartConfig}>
-                <LineChart
-                  data={candles}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis
-                    dataKey="month"
-                    tickFormatter={(value) => {
-                      // Konversi timestamp ke format waktu yang lebih pendek
-                      return new Date(value).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-                    }}
-                  />
-                  <YAxis
-                    domain={["auto", "auto"]}
-                    tickFormatter={(value) => `${value} A`}
-                  />
-                  <ChartTooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-background p-2 border rounded">
-                            <p>{`${payload[0].value} A`}</p>
-                            <p>
-                              {new Date(
-                                payload[0].payload.month
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="desktop"
-                    stroke="#8884d8"
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 6 }}
-                    animationDuration={300}
-                  />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>Arus S</CardHeader>
-            <CardContent className="h-[300px]">
-              <ChartContainer config={chartConfig}>
-                <LineChart
-                  data={candlesS}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis
-                    dataKey="month"
-                    tickFormatter={(value) => {
-                      // Konversi timestamp ke format waktu yang lebih pendek
-                      return new Date(value).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-                    }}
-                  />
-                  <YAxis
-                    domain={["auto", "auto"]}
-                    tickFormatter={(value) => `${value} A`}
-                  />
-                  <ChartTooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-background p-2 border rounded">
-                            <p>{`${payload[0].value} A`}</p>
-                            <p>
-                              {new Date(
-                                payload[0].payload.month
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="desktop"
-                    stroke="#8884d8"
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 6 }}
-                    animationDuration={300}
-                  />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
-          <Card>
-            <CardHeader>Arus T</CardHeader>
-            <CardContent className="h-[300px]">
-              <ChartContainer config={chartConfig}>
-                <LineChart
-                  data={candlesT}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis
-                    dataKey="month"
-                    tickFormatter={(value) => {
-                      // Konversi timestamp ke format waktu yang lebih pendek
-                      return new Date(value).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-                    }}
-                  />
-                  <YAxis
-                    domain={["auto", "auto"]}
-                    tickFormatter={(value) => `${value} A`}
-                  />
-                  <ChartTooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-background p-2 border rounded">
-                            <p>{`${payload[0].value} A`}</p>
-                            <p>
-                              {new Date(
-                                payload[0].payload.month
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="desktop"
-                    stroke="#8884d8"
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 6 }}
-                    animationDuration={300}
-                  />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>KWH</CardHeader>
-            <CardContent className="h-[300px]">
-              <ChartContainer config={chartConfig}>
-                <LineChart
-                  data={candlesKwh}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                  <XAxis
-                    dataKey="month"
-                    tickFormatter={(value) => {
-                      // Konversi timestamp ke format waktu yang lebih pendek
-                      return new Date(value).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-                    }}
-                  />
-                  <YAxis
-                    domain={["auto", "auto"]}
-                    tickFormatter={(value) => `${value} A`}
-                  />
-                  <ChartTooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-background p-2 border rounded">
-                            <p>{`${payload[0].value} A`}</p>
-                            <p>
-                              {new Date(
-                                payload[0].payload.month
-                              ).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                              })}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="desktop"
-                    stroke="#8884d8"
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 6 }}
-                    animationDuration={300}
-                  />
-                </LineChart>
-              </ChartContainer>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6 animate-fade-in">
+        <EnhancedStatCard
+          title="Average Voltage"
+          value={avgVoltage.toFixed(2)}
+          unit="V"
+          delta={{ value: "Normal Range", isPositive: true }}
+          icon={<ChartLineIcon size={24} />}
+          subtitle="Real-time voltage monitoring"
+        />
+        <EnhancedStatCard
+          title="Average Current"
+          value={avgCurrents.toFixed(2)}
+          unit="A"
+          delta={{
+            value: isAdmin ? "Calibrated Data" : "Current Reading",
+            isPositive: true,
+          }}
+          icon={<Activity size={24} />}
+          subtitle={
+            isAdmin ? "After calibration applied" : "Live current measurement"
+          }
+        />
+        <EnhancedStatCard
+          title="Today's Consumption"
+          value={totalEnergy.toFixed(2)}
+          unit="kWh"
+          delta={{ value: "Daily reset at 00:00 WIB", isPositive: true }}
+          icon={<Zap size={24} />}
+          subtitle="Cumulative with automatic daily reset"
+        />
+        <EnhancedStatCard
+          title="System Status"
+          value={isConnected ? "Online" : "Offline"}
+          delta={{
+            value: isConnected
+              ? `Connected | Daily Auto-Reset Active`
+              : "Disconnected",
+            isPositive: isConnected,
+          }}
+          icon={<ChartPieIcon size={24} />}
+          subtitle="MQTT + Database sync with daily reset"
+        />
       </div>
+
+      <div
+        className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6 animate-fade-in"
+        style={{ animationDelay: "0.1s" }}
+      >
+        <EnhancedStatCard
+          title="Today's Cost (Auto-Reset)"
+          value={` ${formatCurrency(electricalBillHours)}`}
+          delta={{
+            value: `LWBP: Rp ${formatCurrency(
+              electricalBillHours
+            )}| WBP: Rp ${formatCurrency(electricalBillHours)}`,
+            isPositive: false,
+          }}
+          icon={<DollarSign size={24} />}
+          subtitle="Auto-resets daily at midnight (WIB)"
+        />
+        <EnhancedStatCard
+          title="Monthly Estimate (From Daily Stats)"
+          value={` ${formatCurrency(electricalBillHours)}`}
+          delta={{
+            value: `Day ${electricalBillHours}/30 (${electricalBillHours.toFixed(
+              1
+            )}%)`,
+            isPositive: true,
+          }}
+          icon={<TrendingUp size={24} />}
+          subtitle={`Avg: ${electricalBillHours.toFixed(
+            2
+          )} kWh/day (recorded daily)`}
+        />
+      </div>
+
+      {!hideCostWithoutBooster && (
+        <div
+          className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6 animate-fade-in"
+          style={{ animationDelay: "0.2s" }}
+        >
+          <EnhancedStatCard
+            title="Monthly kWh (Projected)"
+            value={totalEnergy.toFixed(2)}
+            unit="kWh"
+            delta={{
+              value: `Based on ${totalEnergy.toFixed(
+                2
+              )} days of recorded daily data`,
+              isPositive: true,
+            }}
+            icon={<Zap size={24} />}
+            subtitle="From daily_statistics table"
+          />
+          <EnhancedStatCard
+            title="Cost without Booster"
+            value={`${formatCurrency(electricalBillHours)}`}
+            delta={{
+              value:
+                electricalBillHours > 0
+                  ? `+${electricalBillHours}% from Monthly Estimate`
+                  : "No calibration applied",
+              isPositive: false,
+            }}
+            icon={<ChartBarIcon size={24} />}
+            subtitle="Without power optimization"
+          />
+        </div>
+      )}
     </div>
   );
 };

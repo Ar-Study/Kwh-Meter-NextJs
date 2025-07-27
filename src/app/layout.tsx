@@ -1,21 +1,8 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import SiteHeader from "@/components/Header";
-import Footer from "@/components/Footer";
 import { Toaster } from "react-hot-toast";
-
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   title: "KWH METER - AHC MANUFACTURE",
@@ -28,22 +15,30 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SiteHeader />
-
-          {children}
-          <Toaster position="top-right" reverseOrder={false} />
-          <Footer />
-        </ThemeProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className="antialiased">
+        <SessionProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+            <Toaster
+              position="top-right"
+              reverseOrder={false}
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: "var(--background)",
+                  color: "var(--foreground)",
+                  border: "1px solid var(--border)",
+                },
+              }}
+            />
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   );

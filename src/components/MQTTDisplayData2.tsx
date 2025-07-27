@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { client } from "../lib/mqtt-client";
 import { Card, CardHeader, CardContent } from "./ui/card";
 import { saveData, SaveHasil, SaveHasilSumber } from "@/app/server/action";
-
+import EnhancedStatCard from "./StatusCard";
 import toast from "react-hot-toast";
 import CardChart from "./DisplayData/CardChart";
+import { ChartLineIcon } from "lucide-react";
 // import ChartWithRange from "./DisplayData/ChartWithRange";
 
 type Setting = {
@@ -438,6 +439,14 @@ const MQTTData = () => {
 
       <div className="grid grid-cols-2 gap-4 p-4">
         <div className="grid grid-rows-2 gap-4 p-4">
+          <EnhancedStatCard
+            title="Average Voltage"
+            value={avgVoltage.toString()}
+            unit="V"
+            delta={{ value: "Normal Range", isPositive: true }}
+            icon={<ChartLineIcon size={24} />}
+            subtitle="Real-time voltage monitoring"
+          />
           <Card className="bg-muted text-natural-content p-4 rounded-lg">
             <CardHeader>Without Booster</CardHeader>
             <CardContent>

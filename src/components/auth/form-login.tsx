@@ -3,9 +3,10 @@
 import { signInCredentials } from "@/lib/actions";
 import React, { useEffect } from "react";
 import { useFormState } from "react-dom";
-import { LoginButtoon } from "../button";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const FormLogin = () => {
   const [state, formAction] = useFormState(signInCredentials, null);
@@ -17,7 +18,7 @@ const FormLogin = () => {
 
       setTimeout(async () => {
         await router.push("/");
-        await router.refresh(); // aman karena redirect server-nya dimatikan
+        await router.refresh();
       }, 1500);
     } else if (state?.message) {
       toast.error(state.message);
@@ -25,44 +26,66 @@ const FormLogin = () => {
   }, [state, router]);
 
   return (
-    <form
-      action={formAction}
-      className="w-full mx-auto p-6 bg-white border border-gray-200 rounded-lg shadow-md "
-    >
-      <div className="mb-4">
-        <label
-          htmlFor="email"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Email
-        </label>
-        <input
-          type="email"
-          name="email"
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
-        />
-        <div className="mt-1 text-sm text-gray-500">
-          <span>{state?.error?.email}</span>
+    <div className="min-h-screen  flex items-center justify-center px-4">
+      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg border">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold">AHC Manufacture</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Sign in to your account
+          </p>
+        </div>
+
+        <form action={formAction} className="space-y-4">
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Email
+            </label>
+            <Input
+              type="email"
+              name="email"
+              id="email"
+              placeholder="user@example.com"
+            />
+            {state?.error?.email && (
+              <p className="text-sm text-red-500 mt-1">{state.error.email}</p>
+            )}
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Password
+            </label>
+            <Input
+              type="password"
+              name="password"
+              id="password"
+              placeholder="******"
+            />
+            {state?.error?.password && (
+              <p className="text-sm text-red-500 mt-1">
+                {state.error.password}
+              </p>
+            )}
+          </div>
+
+          <Button type="submit" className="w-full">
+            Sign In
+          </Button>
+        </form>
+
+        <div className="mt-6 text-center text-sm text-muted-foreground">
+          <p>Demo Credentials:</p>
+          <p className="font-medium">Admin: admin@example.com / admin123</p>
+          <p className="font-medium">User: user@example.com / user123</p>
         </div>
       </div>
-      <div className="mb-4">
-        <label
-          htmlFor="password"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Password
-        </label>
-        <input
-          type="password"
-          name="password"
-          className="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-500"
-        />
-        <div className="mt-1 text-sm text-gray-500">
-          <span>{state?.error?.password}</span>
-        </div>
-      </div>
-      <LoginButtoon />
-    </form>
+    </div>
   );
 };
 
