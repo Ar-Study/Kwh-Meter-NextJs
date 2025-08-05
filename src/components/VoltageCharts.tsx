@@ -1,5 +1,5 @@
+// VoltageChart.tsx - Fixed
 "use client";
-
 import React from "react";
 import {
   ResponsiveContainer,
@@ -13,9 +13,9 @@ import {
 
 interface VoltageData {
   time: string;
-  VR: number | null;
-  VS: number | null;
-  VT: number | null;
+  VR: number;
+  VS: number;
+  VT: number;
 }
 
 interface VoltageChartProps {
@@ -42,7 +42,6 @@ const VoltageChart: React.FC<VoltageChartProps> = ({ data }) => {
           </div>
         </div>
       </div>
-
       <ResponsiveContainer width="100%" height="85%">
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -63,25 +62,34 @@ const VoltageChart: React.FC<VoltageChartProps> = ({ data }) => {
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
               border: "none",
             }}
-            formatter={(value: number) => [`${value}V`, ""]}
+            formatter={(value: number, name: string) => [
+              `${value?.toFixed(2) || 0}V`,
+              name,
+            ]}
           />
           <Line
             type="monotone"
             dataKey="VR"
             stroke="#ef4444"
             strokeWidth={2.5}
+            dot={{ fill: "#ef4444", r: 3 }}
+            activeDot={{ r: 5, fill: "#ef4444" }}
           />
           <Line
             type="monotone"
             dataKey="VS"
             stroke="#eab308"
             strokeWidth={2.5}
+            dot={{ fill: "#eab308", r: 3 }}
+            activeDot={{ r: 5, fill: "#eab308" }}
           />
           <Line
             type="monotone"
             dataKey="VT"
             stroke="#3b82f6"
             strokeWidth={2.5}
+            dot={{ fill: "#3b82f6", r: 3 }}
+            activeDot={{ r: 5, fill: "#3b82f6" }}
           />
         </LineChart>
       </ResponsiveContainer>

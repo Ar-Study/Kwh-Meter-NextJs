@@ -1,3 +1,4 @@
+// RevenueChart.tsx - Fixed (Actually Current Chart)
 import React from "react";
 import {
   LineChart,
@@ -9,23 +10,23 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-interface ArusData {
+interface CurrentData {
   time: string;
-  IR: number | null;
-  IS: number | null;
-  IT: number | null;
+  IR: number;
+  IS: number;
+  IT: number;
 }
 
-interface ArusChartProps {
-  data: ArusData[];
+interface CurrentChartProps {
+  data: CurrentData[];
 }
 
-const RevenueChart: React.FC<ArusChartProps> = ({ data }) => {
+const RevenueChart: React.FC<CurrentChartProps> = ({ data }) => {
   return (
     <div className="dashboard-card h-[400px]">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-semibold">
-          Current Monitor (R, S, T) - Enhanced
+          Current Monitor (R, S, T) - Calibrated
         </h2>
         <div className="flex items-center gap-4">
           <div className="flex items-center">
@@ -42,7 +43,6 @@ const RevenueChart: React.FC<ArusChartProps> = ({ data }) => {
           </div>
         </div>
       </div>
-
       <ResponsiveContainer width="100%" height="85%">
         <LineChart
           data={data}
@@ -71,7 +71,10 @@ const RevenueChart: React.FC<ArusChartProps> = ({ data }) => {
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
               border: "none",
             }}
-            formatter={(value: number) => [`${value}A`, ""]}
+            formatter={(value: number, name: string) => [
+              `${value?.toFixed(2) || 0}A`,
+              name,
+            ]}
           />
           <Line
             type="monotone"

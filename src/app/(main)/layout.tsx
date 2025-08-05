@@ -18,7 +18,6 @@ export default function MainLayout({
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isConnected = true; // Simulating connection state, replace with actual logic
-  const [calibrationOpen, setCalibrationOpen] = useState(false);
   const [hideCostWithoutBooster, setHideCostWithoutBooster] = useState(false);
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -41,7 +40,6 @@ export default function MainLayout({
           onToggleHideCost={() =>
             setHideCostWithoutBooster(!hideCostWithoutBooster)
           }
-          onOpenCalibration={() => setCalibrationOpen(true)}
           onToggleSidebar={toggleSidebar}
         />
         <main style={{ padding: "24px" }}>{children}</main>

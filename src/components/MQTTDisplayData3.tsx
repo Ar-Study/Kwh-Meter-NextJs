@@ -1,13 +1,11 @@
+// MQTTData.tsx - Main Component (FIXED)
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { client } from "../lib/mqtt-client";
-import { Card, CardHeader, CardContent } from "./ui/card";
 import { saveData, SaveHasil, SaveHasilSumber } from "@/app/server/action";
-// import ApexChart from "react-apexcharts";
 import EnhancedStatCard from "./StatusCard";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-import { ChartContainer, ChartTooltip } from "./ui/chart";
+
 import {
   Activity,
   ChartBarIcon,
@@ -16,15 +14,40 @@ import {
   DollarSign,
   TrendingUp,
   Zap,
+  // Settings,
 } from "lucide-react";
+import VoltageChart from "./VoltageCharts";
+import RevenueChart from "./RevenueCharts";
+import KwhChart from "./KwhCharts";
+import CalibrationModal from "./CalibrationModal";
+// import { Button } from "./ui/button";
 
 type Candle = {
   month: number; // timestamp
-  desktop: number; // open, high, low, close
+  desktop: number; // value
+};
+
+type KwhDataPoint = {
+  time: string;
+  KWH: number;
+};
+
+type VoltageDataPoint = {
+  time: string;
+  VR: number;
+  VS: number;
+  VT: number;
+};
+
+type CurrentDataPoint = {
+  time: string;
+  IR: number;
+  IS: number;
+  IT: number;
 };
 
 const MQTTData = () => {
-  // const session = auth();
+  // Basic States
   const [voltageR, setVoltageR] = useState<number | null>(null);
   const [voltageS, setVoltageS] = useState<number | null>(null);
   const [voltageT, setVoltageT] = useState<number | null>(null);
@@ -35,44 +58,39 @@ const MQTTData = () => {
   const [avgCurrents, setAvgCurrents] = useState<number>(0);
   const [avgVoltage, setAvgVoltage] = useState<number>(0);
   const [energyRecords, setEnergyRecords] = useState<number[]>([]);
+  const [totalEnergyMonth, setTotalEnergyMonth] = useState<number>(0);
   const [electricalBillHours, setElectricalBillHours] = useState<number>(0);
+  const [hourlyEnergyBuffer, setHourlyEnergyBuffer] = useState<number[]>([]);
 
+  // Calibration States
   const [inputKalibrasiR, setInputKalibrasiR] = useState<number>(0);
   const [inputKalibrasiS, setInputKalibrasiS] = useState<number>(0);
   const [inputKalibrasiT, setInputKalibrasiT] = useState<number>(0);
   const [inputValue1, setInputValue1] = useState<number>(5.75);
   const [persenadd, setPersenAdd] = useState<number>(1);
+  const [withoutsBooster, setWithoutBooster] = useState<number>(0);
 
+  // UI States
   const [realTime, setRealTime] = useState<string>(
     new Date().toLocaleTimeString()
   );
-  // const [inputKalibrasiR, setInputKalibrasiR] = useState<number>(0);
-  // const [inputKalibrasiS, setInputKalibrasiS] = useState<number>(0);
-  // const [inputKalibrasiT, setInputKalibrasiT] = useState<number>(0);
-  // const [inputValue1, setInputValue1] = useState<number>(5.75);
-  const [withoutsBooster, setWithoutBooster] = useState<number>(0);
-  // const [persenadd, setPersenAdd] = useState<number>(1);
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
+  const [noDataAlert, setNoDataAlert] = useState<boolean>(false);
+  const [isCalibrationModalOpen, setIsCalibrationModalOpen] =
+    useState<boolean>(false);
 
-  // const handleInputKalibrasiR = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setInputKalibrasiR(parseFloat(e.target.value) || 0);
-  // };
+  // Constants
+  const cosPhi = 0.95;
+  const phaseMultiplier = 1.75;
+  const LWBP_RATE = 1035.78;
+  const WBP_RATE = 1553.67;
 
-  // const handleInputKalibrasiS = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setInputKalibrasiS(parseFloat(e.target.value) || 0);
-  // };
+  const getTariff = () => {
+    const hour = new Date().getHours();
+    return hour >= 17 && hour < 23 ? WBP_RATE : LWBP_RATE;
+  };
 
-  // const handleInputKalibrasiT = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setInputKalibrasiT(parseFloat(e.target.value) || 0);
-  // };
-
-  // const handleInputChangeS = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setInputValue1(parseFloat(e.target.value) || 0);
-  // };
-
-  // const handlePersenAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   setPersenAdd(parseFloat(e.target.value));
-  // };
-
+  // Update time every second
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -83,17 +101,7 @@ const MQTTData = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const cosPhi = 0.95;
-  const phaseMultiplier = 1.75;
-  const LWBP_RATE = 1035.78;
-  const WBP_RATE = 1553.67;
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(Date.now());
-  const [noDataAlert, setNoDataAlert] = useState<boolean>(false);
-  const getTariff = () => {
-    const hour = new Date().getHours();
-    return hour >= 17 && hour < 23 ? WBP_RATE : LWBP_RATE;
-  };
-
+  // Fetch calibration settings
   useEffect(() => {
     const fetchSetting = async () => {
       try {
@@ -105,7 +113,7 @@ const MQTTData = () => {
           setInputKalibrasiR(data.setting.multiplierR || 0);
           setInputKalibrasiS(data.setting.multiplierS || 0);
           setInputKalibrasiT(data.setting.multiplierT || 0);
-          setPersenAdd(data.setting.persen || 0);
+          setPersenAdd(data.setting.persen || 1);
           setInputValue1(data.setting.divider || 5.75);
         }
       } catch (error) {
@@ -116,29 +124,14 @@ const MQTTData = () => {
     fetchSetting();
   }, []);
 
-  // useEffect(() => {
-  //   const fetchSetting = async () => {
-  //     try {
-  //       const res = await fetch("/api/data");
-  //       if (!res.ok) throw new Error("Failed to fetch");
+  console.log(realTime);
 
-  //       const data = await res.json();
-  //       if (data) {
-  //       }
-  //       console.log(data);
-  //     } catch (error) {
-  //       console.error("Error fetching setting:", error);
-  //     }
-  //   };
-
-  //   fetchSetting();
-  // }, []);
-
+  // MQTT Message Handler
   useEffect(() => {
     const handleMessage = (topic: string, message: Buffer) => {
       const value = parseFloat(message.toString());
       if (isNaN(value)) return;
-      setLastUpdateTime(Date.now()); // Update setiap ada data masuk
+      setLastUpdateTime(Date.now());
 
       switch (topic) {
         case "SABDA/VR":
@@ -162,10 +155,11 @@ const MQTTData = () => {
         default:
           break;
       }
+
+      // Save to database
       const handleSaveSumber = async () => {
         await SaveHasilSumber(topic, value);
       };
-
       handleSaveSumber();
     };
 
@@ -175,13 +169,14 @@ const MQTTData = () => {
     };
   }, []);
 
+  // Connection monitoring
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
       const diff = now - lastUpdateTime;
 
       if (diff > 360000) {
-        // jika lebih dari 5 detik tidak ada update
+        // 6 minutes
         setNoDataAlert(true);
       } else {
         setNoDataAlert(false);
@@ -191,10 +186,12 @@ const MQTTData = () => {
     return () => clearInterval(interval);
   }, [lastUpdateTime]);
 
+  // Calculate calibrated currents
   const aftercurrentR = currentR / inputValue1 + inputKalibrasiR;
   const aftercurrentS = currentS / inputValue1 + inputKalibrasiS;
   const aftercurrentT = currentT / inputValue1 + inputKalibrasiT;
 
+  // Calculate average currents
   useEffect(() => {
     if (
       aftercurrentR !== null &&
@@ -203,14 +200,16 @@ const MQTTData = () => {
     ) {
       setAvgCurrents((aftercurrentR + aftercurrentS + aftercurrentT) / 3);
     }
-  }, [aftercurrentR, aftercurrentS, aftercurrentT]); // Dependencies
+  }, [aftercurrentR, aftercurrentS, aftercurrentT]);
 
+  // Calculate average voltage
   useEffect(() => {
     if (voltageR !== null && voltageS !== null && voltageT !== null) {
       setAvgVoltage((voltageR + voltageS + voltageT) / 3);
     }
   }, [voltageR, voltageS, voltageT]);
 
+  // Calculate KWH
   useEffect(() => {
     if (
       avgCurrents !== null &&
@@ -220,14 +219,39 @@ const MQTTData = () => {
     ) {
       const kwh = (phaseMultiplier * avgCurrents * avgVoltage * cosPhi) / 1000;
       if (isFinite(kwh)) {
-        // Memastikan kwh bukan Infinity
         setTotalEnergy(kwh);
-        // setAvgCurrents{avgCurrent};
-        setEnergyRecords((prev) => [...prev, kwh]);
+        setEnergyRecords((prev) => [...prev.slice(-100), kwh]); // Keep last 100 records
       }
     }
   }, [avgCurrents, avgVoltage]);
 
+  // Collect energy data to hourly buffer
+  useEffect(() => {
+    if (energyRecords.length > 0) {
+      const latestEnergy = energyRecords[energyRecords.length - 1];
+      setHourlyEnergyBuffer((prev) => [...prev, latestEnergy]);
+    }
+  }, [energyRecords]);
+
+  // Update monthly energy every hour
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (hourlyEnergyBuffer.length > 0) {
+        const averageHourlyEnergy =
+          hourlyEnergyBuffer.reduce((sum, kwh) => sum + kwh, 0) /
+          hourlyEnergyBuffer.length;
+        setTotalEnergyMonth((prev) => prev + averageHourlyEnergy);
+        setHourlyEnergyBuffer([]);
+        console.log(
+          `✅ Hourly average added: ${averageHourlyEnergy.toFixed(3)} kWh`
+        );
+      }
+    }, 3600000); // 1 hour
+
+    return () => clearInterval(interval);
+  }, [hourlyEnergyBuffer]);
+
+  // Calculate electrical bill
   useEffect(() => {
     if (energyRecords.length > 0) {
       const totalCost = energyRecords.reduce(
@@ -238,26 +262,14 @@ const MQTTData = () => {
     }
   }, [energyRecords]);
 
-  // const withoutBooster =
-  //   avgCurrents !== null ? (avgCurrents * persenadd).toFixed(1) : "No data";
-
-  // const withBooster = avgCurrents !== null ? avgCurrents.toFixed(1) : "No data";
+  // Calculate without booster
   useEffect(() => {
     if (avgCurrents !== null) {
-      setWithoutBooster(avgCurrents * 5.75);
+      setWithoutBooster(avgCurrents * persenadd);
     }
-  }, [avgCurrents]); // Dependencies
-  const currentMonth = new Date().toLocaleString("default", { month: "long" });
-  const monthlyEnergy =
-    totalEnergy !== null ? (totalEnergy * 30).toFixed(2) : "No data";
+  }, [avgCurrents, persenadd]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-    }).format(amount);
-  };
-
+  // Save data every hour
   useEffect(() => {
     const handleSave = async () => {
       await saveData(
@@ -271,130 +283,135 @@ const MQTTData = () => {
     };
 
     const intervalId = setInterval(handleSave, 3600000);
-    return () => clearInterval(intervalId); // cleanup
+    return () => clearInterval(intervalId);
   }, [avgVoltage, avgCurrents, totalEnergy, electricalBillHours, persenadd]);
 
+  // Save hasil data
   useEffect(() => {
     const handleSaveHasil = async () => {
       await SaveHasil(withoutsBooster, avgCurrents);
     };
 
-    setInterval(handleSaveHasil, 3600000);
+    const intervalId = setInterval(handleSaveHasil, 3600000);
+    return () => clearInterval(intervalId);
+  }, [withoutsBooster, avgCurrents]);
+
+  // Chart data states
+  const [voltageCandles, setVoltageCandles] = useState<Candle[]>([]);
+  const [currentCandles, setCurrentCandles] = useState<{
+    R: Candle[];
+    S: Candle[];
+    T: Candle[];
+  }>({
+    R: [],
+    S: [],
+    T: [],
   });
+  const [kwhCandles, setKwhCandles] = useState<Candle[]>([]);
 
-  // MQTT subscribe... (pake lib seperti mqtt.js)
-
-  const [candles, setCandles] = useState<Candle[]>([]);
-  const [candlesS, setCandlesS] = useState<Candle[]>([]);
-  const [candlesT, setCandlesT] = useState<Candle[]>([]);
-  const [candlesKwh, setCandlesKWh] = useState<Candle[]>([]);
-
-  const tempValues = useRef<number[]>([]); // buffer per menit
-
+  // Generate voltage chart data
   useEffect(() => {
-    // Interval untuk menyimpan currentR setiap detik ke buffer
-    const intervalPush = setInterval(() => {
-      tempValues.current.push(currentR - 13000);
-    }, 5000); // tiap 1 detik
+    const interval = setInterval(() => {
+      if (voltageR !== null && voltageS !== null && voltageT !== null) {
+        const newCandle: Candle = {
+          month: Date.now(),
+          desktop: (voltageR + voltageS + voltageT) / 3,
+        };
+        setVoltageCandles((prev) => [...prev.slice(-30), newCandle]);
+      }
+    }, 5000);
 
-    // console.log(tempValues);
+    return () => clearInterval(interval);
+  }, [voltageR, voltageS, voltageT]);
 
-    // Interval untuk membuat candlestick setiap 1 menit
-    const intervalCandle = setInterval(() => {
-      const vals = tempValues.current;
-      if (vals.length === 0) return;
-
-      const newCandle: Candle = {
-        month: Date.now(),
-        desktop: aftercurrentR,
-      };
-      // console.log(open);
-      // console.log(newCandle);
-
-      setCandles((prev) => [...prev.slice(-30), newCandle]); // max 30 candle
-      tempValues.current = []; // reset buffer
-    }, 5000); // tiap 1 menit
-
-    return () => {
-      clearInterval(intervalPush);
-      clearInterval(intervalCandle);
-    };
-  }, [aftercurrentR]);
-
+  // Generate current chart data
   useEffect(() => {
-    // Interval untuk membuat candlestick setiap 1 menit
-    const intervalCandle = setInterval(() => {
-      const newCandle: Candle = {
-        month: Date.now(),
-        desktop: aftercurrentS,
-      };
-      // console.log(open);
-      // console.log(newCandle);
+    const interval = setInterval(() => {
+      const newCandleR: Candle = { month: Date.now(), desktop: aftercurrentR };
+      const newCandleS: Candle = { month: Date.now(), desktop: aftercurrentS };
+      const newCandleT: Candle = { month: Date.now(), desktop: aftercurrentT };
 
-      setCandlesS((prev) => [...prev.slice(-30), newCandle]); // max 30 candle
-    }, 5000); // tiap 1 menit
+      setCurrentCandles((prev) => ({
+        R: [...prev.R.slice(-30), newCandleR],
+        S: [...prev.S.slice(-30), newCandleS],
+        T: [...prev.T.slice(-30), newCandleT],
+      }));
+    }, 5000);
 
-    return () => {
-      clearInterval(intervalCandle);
-    };
-  }, [aftercurrentS]);
+    return () => clearInterval(interval);
+  }, [aftercurrentR, aftercurrentS, aftercurrentT]);
 
+  // Generate KWH chart data
   useEffect(() => {
-    // Interval untuk membuat candlestick setiap 1 menit
-    const intervalCandle = setInterval(() => {
-      const newCandle: Candle = {
-        month: Date.now(),
-        desktop: aftercurrentT,
-      };
-      // console.log(open);
-      // console.log(newCandle);
-
-      setCandlesT((prev) => [...prev.slice(-30), newCandle]); // max 30 candle
-    }, 5000); // tiap 1 menit
-
-    return () => {
-      clearInterval(intervalCandle);
-    };
-  }, [aftercurrentT]);
-
-  useEffect(() => {
-    // Interval untuk membuat candlestick setiap 1 menit
-    const intervalCandle = setInterval(() => {
+    const interval = setInterval(() => {
       const newCandle: Candle = {
         month: Date.now(),
         desktop: totalEnergy,
       };
-      // console.log(open);
-      // console.log(newCandle);
+      setKwhCandles((prev) => [...prev.slice(-30), newCandle]);
+    }, 5000);
 
-      setCandlesKWh((prev) => [...prev.slice(-30), newCandle]); // max 30 candle
-    }, 5000); // tiap 1 menit
-
-    return () => {
-      clearInterval(intervalCandle);
-    };
+    return () => clearInterval(interval);
   }, [totalEnergy]);
 
-  // console.log(candles);
+  // Prepare chart data
+  const voltageChartData: VoltageDataPoint[] = voltageCandles
+    .map((candle) => ({
+      time: new Date(candle.month).toLocaleTimeString("en-GB"),
+      VR: voltageR || 0,
+      VS: voltageS || 0,
+      VT: voltageT || 0,
+    }))
+    .slice(-20);
 
-  const chartConfig = {
-    desktop: {
-      label: "Desktop",
-      color: "hsl(var(--chart-1))",
-    },
+  const currentChartData: CurrentDataPoint[] = currentCandles.R.map((_, i) => ({
+    time: new Date(currentCandles.R[i]?.month || Date.now()).toLocaleTimeString(
+      "en-GB"
+    ),
+    IR: currentCandles.R[i]?.desktop || 0,
+    IS: currentCandles.S[i]?.desktop || 0,
+    IT: currentCandles.T[i]?.desktop || 0,
+  })).slice(-20);
+
+  const kwhData: KwhDataPoint[] = kwhCandles
+    .map((candle) => ({
+      time: new Date(candle.month).toLocaleTimeString("en-GB"),
+      KWH: parseFloat(candle.desktop.toFixed(2)),
+    }))
+    .slice(-20);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+    }).format(amount);
   };
 
-  const isAdmin = true; // Simulating admin state, replace with actual logic
-  const isConnected = true; // Simulating connection state, replace with actual logic
-  const hideCostWithoutBooster = false; // Simulating state, replace with actual logic
+  const isAdmin = true;
+  const isConnected = !noDataAlert;
+  const hideCostWithoutBooster = false;
+
   return (
     <div>
+      {/* Alert */}
       {noDataAlert && (
         <div className="bg-red-100 text-red-700 p-3 rounded mb-4">
-          ⚠️ 303 Booster Off
+          ⚠️ 303 Booster Off - No data received for 6 minutes
         </div>
       )}
 
+      {/* Calibration Button */}
+      {/* <div className="flex justify-end mb-4">
+        <Button
+          onClick={() => setIsCalibrationModalOpen(true)}
+          variant="outline"
+        >
+          <Settings className="w-4 h-4 mr-2" />
+          Calibration Settings
+        </Button>
+      </div> */}
+
+      {/* Main Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6 animate-fade-in">
         <EnhancedStatCard
           title="Average Voltage"
@@ -430,7 +447,7 @@ const MQTTData = () => {
           value={isConnected ? "Online" : "Offline"}
           delta={{
             value: isConnected
-              ? `Connected | Daily Auto-Reset Active`
+              ? "Connected | Daily Auto-Reset Active"
               : "Disconnected",
             isPositive: isConnected,
           }}
@@ -439,38 +456,36 @@ const MQTTData = () => {
         />
       </div>
 
+      {/* Cost Stats */}
       <div
         className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6 animate-fade-in"
         style={{ animationDelay: "0.1s" }}
       >
         <EnhancedStatCard
           title="Today's Cost (Auto-Reset)"
-          value={` ${formatCurrency(electricalBillHours)}`}
+          value={formatCurrency(electricalBillHours)}
           delta={{
-            value: `LWBP: Rp ${formatCurrency(
-              electricalBillHours
-            )}| WBP: Rp ${formatCurrency(electricalBillHours)}`,
+            value: `LWBP: ${formatCurrency(LWBP_RATE)} | WBP: ${formatCurrency(
+              WBP_RATE
+            )}`,
             isPositive: false,
           }}
           icon={<DollarSign size={24} />}
           subtitle="Auto-resets daily at midnight (WIB)"
         />
         <EnhancedStatCard
-          title="Monthly Estimate (From Daily Stats)"
-          value={` ${formatCurrency(electricalBillHours)}`}
+          title="Monthly Estimate"
+          value={formatCurrency(totalEnergyMonth * getTariff())}
           delta={{
-            value: `Day ${electricalBillHours}/30 (${electricalBillHours.toFixed(
-              1
-            )}%)`,
+            value: `Based on ${Math.floor(totalEnergyMonth)} kWh total`,
             isPositive: true,
           }}
           icon={<TrendingUp size={24} />}
-          subtitle={`Avg: ${electricalBillHours.toFixed(
-            2
-          )} kWh/day (recorded daily)`}
+          subtitle={`Monthly total: ${totalEnergyMonth.toFixed(2)} kWh`}
         />
       </div>
 
+      {/* Additional Stats */}
       {!hideCostWithoutBooster && (
         <div
           className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6 animate-fade-in"
@@ -478,25 +493,23 @@ const MQTTData = () => {
         >
           <EnhancedStatCard
             title="Monthly kWh (Projected)"
-            value={totalEnergy.toFixed(2)}
+            value={totalEnergyMonth.toFixed(2)}
             unit="kWh"
             delta={{
-              value: `Based on ${totalEnergy.toFixed(
-                2
-              )} days of recorded daily data`,
+              value: `Based on hourly averages`,
               isPositive: true,
             }}
             icon={<Zap size={24} />}
-            subtitle="From daily_statistics table"
+            subtitle="From hourly statistics"
           />
           <EnhancedStatCard
             title="Cost without Booster"
-            value={`${formatCurrency(electricalBillHours)}`}
+            value={formatCurrency(withoutsBooster * getTariff())}
             delta={{
               value:
-                electricalBillHours > 0
-                  ? `+${electricalBillHours}% from Monthly Estimate`
-                  : "No calibration applied",
+                persenadd > 1
+                  ? `+${((persenadd - 1) * 100).toFixed(1)}% from current`
+                  : "No increase applied",
               isPositive: false,
             }}
             icon={<ChartBarIcon size={24} />}
@@ -504,6 +517,54 @@ const MQTTData = () => {
           />
         </div>
       )}
+
+      {/* Charts */}
+      <div
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 animate-fade-in"
+        style={{ animationDelay: "0.3s" }}
+      >
+        <VoltageChart data={voltageChartData} />
+        <RevenueChart data={currentChartData} />
+      </div>
+
+      <div
+        className="grid grid-cols-1 gap-6 mb-6 animate-fade-in"
+        style={{ animationDelay: "0.4s" }}
+      >
+        <KwhChart data={kwhData} />
+      </div>
+
+      {/* Calibration Modal */}
+      <CalibrationModal
+        isOpen={isCalibrationModalOpen}
+        onClose={() => setIsCalibrationModalOpen(false)}
+        inputKalibrasiR={inputKalibrasiR}
+        inputKalibrasiS={inputKalibrasiS}
+        inputKalibrasiT={inputKalibrasiT}
+        persenadd={persenadd}
+        inputValue1={inputValue1}
+        onSave={async (calibrationData) => {
+          try {
+            const response = await fetch("/api/setting", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(calibrationData),
+            });
+
+            if (response.ok) {
+              setInputKalibrasiR(calibrationData.multiplierR);
+              setInputKalibrasiS(calibrationData.multiplierS);
+              setInputKalibrasiT(calibrationData.multiplierT);
+              setPersenAdd(calibrationData.persen);
+              setInputValue1(calibrationData.divider);
+              setIsCalibrationModalOpen(false);
+              console.log("✅ Calibration saved successfully");
+            }
+          } catch (error) {
+            console.error("❌ Error saving calibration:", error);
+          }
+        }}
+      />
     </div>
   );
 };

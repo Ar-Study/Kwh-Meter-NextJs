@@ -1,7 +1,14 @@
 "use client";
 
 import React from "react";
-import { LayoutDashboard, FileText, Users, ChevronLeft } from "lucide-react";
+import { useSession } from "next-auth/react";
+import {
+  LayoutDashboard,
+  FileText,
+  Users,
+  ChevronLeft,
+  LogOut,
+} from "lucide-react";
 
 // ULTRA SIMPLE - NO STATE, NO CALLBACKS, NO COMPLEX LOGIC
 interface DashboardSidebarProps {
@@ -18,7 +25,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     { icon: LayoutDashboard, label: "Dashboard", href: "/" },
     { icon: FileText, label: "Laporan", href: "/laporan" },
     { icon: Users, label: "Management", href: "/management" },
+    { icon: LogOut, label: "Keluar", href: "/keluar" },
   ];
+
+  const { data: session } = useSession();
 
   return (
     <div
@@ -95,8 +105,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               U
             </div>
             <div>
-              <div className="text-sm font-medium">Test User</div>
-              <div className="text-xs text-gray-500">Admin</div>
+              <div className="text-sm font-medium">{session?.user.name}</div>
+              <div className="text-xs text-gray-500">{session?.user.role}</div>
             </div>
           </div>
         ) : (

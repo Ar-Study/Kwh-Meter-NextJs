@@ -1,24 +1,19 @@
 "use client";
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { MenuIcon, Settings, EyeOff, Eye } from "lucide-react";
+import { MenuIcon } from "lucide-react";
 
 interface DashboardHeaderProps {
   isAdmin: boolean;
   isConnected: boolean;
   hideCostWithoutBooster: boolean;
   onToggleHideCost: () => void;
-  onOpenCalibration: () => void;
   onToggleSidebar: () => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   isAdmin,
   isConnected,
-  hideCostWithoutBooster,
-  onToggleHideCost,
-  onOpenCalibration,
   onToggleSidebar,
 }) => {
   return (
@@ -38,32 +33,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-4">
-        {isAdmin && (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onToggleHideCost}
-              className="flex items-center gap-2"
-            >
-              {hideCostWithoutBooster ? (
-                <Eye size={16} />
-              ) : (
-                <EyeOff size={16} />
-              )}
-              {hideCostWithoutBooster ? "Tampilkan" : "Sembunyikan"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onOpenCalibration}
-              className="flex items-center gap-2"
-            >
-              <Settings size={16} />
-              Kalibrasi
-            </Button>
-          </>
-        )}
         <button
           className="md:hidden p-2 rounded-md hover:bg-muted"
           onClick={onToggleSidebar}
