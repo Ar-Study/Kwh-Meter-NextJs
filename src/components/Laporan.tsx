@@ -114,7 +114,7 @@ function Laporans() {
     }
 
     const totalKwh = data.reduce((sum, item) => sum + item.kwh, 0);
-    const totalCost = data.reduce((sum, item) => sum + item.biaya, 0);
+    // const totalCost = data.reduce((sum, item) => sum + item.biaya, 0);
 
     // Assume 60% LWBP and 40% WBP distribution
     const lwbpKwh = totalKwh * 0.6;
