@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   FileText,
@@ -10,7 +10,6 @@ import {
   LogOut,
 } from "lucide-react";
 
-// ULTRA SIMPLE - NO STATE, NO CALLBACKS, NO COMPLEX LOGIC
 interface DashboardSidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
@@ -20,15 +19,14 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   isCollapsed,
   onToggle,
 }) => {
-  // Static menu - no filtering, no dynamic logic
-  const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-    { icon: FileText, label: "Laporan", href: "/laporan" },
-    { icon: Users, label: "Management", href: "/management" },
-    { icon: LogOut, label: "Keluar", href: "/keluar" },
-  ];
-
   const { data: session } = useSession();
+
+  // Menu selain logout
+  const menuItems = [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/", role: "user" },
+    { icon: FileText, label: "Laporan", href: "/laporan", role: "user" },
+    { icon: Users, label: "Management", href: "/management", role: "admin" },
+  ];
 
   return (
     <div
@@ -55,13 +53,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         <button
           onClick={onToggle}
           className="p-2 rounded hover:bg-gray-100"
-          style={{
-            padding: "8px",
-            borderRadius: "4px",
-            backgroundColor: "transparent",
-            border: "none",
-            cursor: "pointer",
-          }}
+          type="button"
         >
           <ChevronLeft
             size={16}
@@ -75,26 +67,28 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
       {/* Menu Items */}
       <div className="p-2 space-y-1">
-        {menuItems.map((item, index) => (
-          <a
-            key={index}
-            href={item.href}
-            className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 text-gray-700"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              textDecoration: "none",
-              color: "#374151",
-              transition: "background-color 0.15s ease",
-            }}
-          >
-            <item.icon size={18} />
-            {!isCollapsed && <span>{item.label}</span>}
-          </a>
-        ))}
+        {menuItems
+          .filter((item) => session?.user?.role === item.role)
+          .map((item, index) => (
+            <a
+              key={index}
+              href={item.href}
+              className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 text-gray-700"
+            >
+              <item.icon size={18} />
+              {!isCollapsed && <span>{item.label}</span>}
+            </a>
+          ))}
+
+        {/* Logout Button */}
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 text-gray-700 w-full text-left"
+          type="button"
+        >
+          <LogOut size={18} />
+          {!isCollapsed && <span>Keluar</span>}
+        </button>
       </div>
 
       {/* User Section */}
@@ -102,17 +96,17 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         {!isCollapsed ? (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              U
+              {session?.user?.name?.charAt(0) || "U"}
             </div>
             <div>
-              <div className="text-sm font-medium">{session?.user.name}</div>
-              <div className="text-xs text-gray-500">{session?.user.role}</div>
+              <div className="text-sm font-medium">{session?.user?.name}</div>
+              <div className="text-xs text-gray-500">{session?.user?.role}</div>
             </div>
           </div>
         ) : (
           <div className="flex justify-center">
             <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              U
+              {session?.user?.name?.charAt(0) || "U"}
             </div>
           </div>
         )}
