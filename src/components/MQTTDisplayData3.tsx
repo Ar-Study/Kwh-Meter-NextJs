@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { client } from "../lib/mqtt-client";
-import { saveData, SaveHasil, SaveHasilSumber } from "@/app/server/action";
+import { getKwhPricesInRange, saveData, SaveHasil, SaveHasilSumber } from "@/app/server/action";
 import EnhancedStatCard from "./StatusCard";
 
 import {
@@ -62,6 +62,7 @@ const MQTTData = () => {
   const [electricalBillHours, setElectricalBillHours] = useState<number>(0);
   const [hourlyEnergyBuffer, setHourlyEnergyBuffer] = useState<number[]>([]);
 
+  const result =  getKwhPricesInRange(startDate, endDate);
   // Calibration States
   const [inputKalibrasiR, setInputKalibrasiR] = useState<number>(0);
   const [inputKalibrasiS, setInputKalibrasiS] = useState<number>(0);
