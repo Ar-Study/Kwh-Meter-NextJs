@@ -14,7 +14,7 @@ import {
   DollarSign,
   TrendingUp,
   Zap,
-  // Settings,
+  // Settings,                                                               
 } from "lucide-react";
 import VoltageChart from "./VoltageCharts";
 import RevenueChart from "./RevenueCharts";
@@ -23,7 +23,7 @@ import CalibrationModal from "./CalibrationModal";
 // import { Button } from "./ui/button";
 
 type Candle = {
-  month: number; // timestamp
+  month: number; // timestamp1
   desktop: number; // value
 };
 
@@ -62,7 +62,25 @@ const MQTTData = () => {
   const [electricalBillHours, setElectricalBillHours] = useState<number>(0);
   const [hourlyEnergyBuffer, setHourlyEnergyBuffer] = useState<number[]>([]);
 
+ const now = new Date();
+const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+
+// Ambil tanggal terakhir bulan ini
+const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+// Format ke string YYYY-MM-DD
+const formatDate = (date:any) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const startDate = formatDate(firstDay); // "YYYY-MM-01"
+const endDate = formatDate(lastDay);  
   const result =  getKwhPricesInRange(startDate, endDate);
+
+  
   // Calibration States
   const [inputKalibrasiR, setInputKalibrasiR] = useState<number>(0);
   const [inputKalibrasiS, setInputKalibrasiS] = useState<number>(0);

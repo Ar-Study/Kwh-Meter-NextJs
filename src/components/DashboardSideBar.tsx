@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from 'next/image';
 import { useSession, signOut } from "next-auth/react";
 import {
   LayoutDashboard,
@@ -26,6 +27,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     { icon: LayoutDashboard, label: "Dashboard", href: "/", role: "user" },
     { icon: FileText, label: "Laporan", href: "/laporan", role: "user" },
     { icon: Users, label: "Management", href: "/management", role: "admin" },
+    { icon: FileText, label: "Laporan", href: "/laporan", role: "admin" },
+
   ];
 
   return (
@@ -43,10 +46,16 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-500 rounded text-white flex items-center justify-center font-bold">
-              A
-            </div>
-            <span className="font-semibold">AHC</span>
+            <a href="/"> <Image
+                src="/AHC.svg"
+                alt="AHC Logo"
+                className="dark:invert p-2 gap-3 mr-8 flex-nowrap items-center justify-start"
+                width={180}
+                height={48}
+                priority
+                /></a>
+            
+
           </div>
         )}
 
@@ -94,7 +103,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       {/* User Section */}
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
         {!isCollapsed ? (
-          <div className="flex items-center gap-3">
+          <a href="/profile"><div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
               {session?.user?.name?.charAt(0) || "U"}
             </div>
@@ -102,7 +111,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               <div className="text-sm font-medium">{session?.user?.name}</div>
               <div className="text-xs text-gray-500">{session?.user?.role}</div>
             </div>
-          </div>
+          </div></a>
+          
         ) : (
           <div className="flex justify-center">
             <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
