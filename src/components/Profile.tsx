@@ -2,8 +2,7 @@
 import React from 'react';
 import { 
   Avatar, 
-  AvatarFallback, 
-  AvatarImage 
+  AvatarFallback 
 } from "@/components/ui/avatar";
 import { 
   Card, 
@@ -24,12 +23,14 @@ const Profile = () => {
   return (
     <div className="flex min-h-screen bg-background">
       <div className="flex-1 p-6 mx-auto max-w-4xl">
-        <Button 
+        <a href="/"><Button 
           variant="outline" 
           className="mb-6"
+          
         >
           Back to Dashboard
-        </Button>
+        </Button></a>
+        
 
         <Card className="w-full">
           <CardHeader>

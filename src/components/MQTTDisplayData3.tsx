@@ -69,18 +69,18 @@ const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
 const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
 // Format ke string YYYY-MM-DD
-const formatDate = (date:any) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+// const formatDate = (date) => {
+//   const year = date.getFullYear();
+//   const month = String(date.getMonth() + 1).padStart(2, '0');
+//   const day = String(date.getDate()).padStart(2, '0');
+//   return `${year}-${month}-${day}`;
+// };
 
-const startDate = formatDate(firstDay); // "YYYY-MM-01"
-const endDate = formatDate(lastDay);  
-  const result =  getKwhPricesInRange(startDate, endDate);
+// const startDate = formatDate(firstDay); // "YYYY-MM-01"
+// const endDate = formatDate(lastDay);  
+//   const result =  getKwhPricesInRange(startDate, endDate);
+// console.log(result);
 
-  
   // Calibration States
   const [inputKalibrasiR, setInputKalibrasiR] = useState<number>(0);
   const [inputKalibrasiS, setInputKalibrasiS] = useState<number>(0);
@@ -256,6 +256,7 @@ const endDate = formatDate(lastDay);
   useEffect(() => {
     const interval = setInterval(() => {
       if (hourlyEnergyBuffer.length > 0) {
+
         const averageHourlyEnergy =
           hourlyEnergyBuffer.reduce((sum, kwh) => sum + kwh, 0) /
           hourlyEnergyBuffer.length;
