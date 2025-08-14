@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { client } from "../lib/mqtt-client";
-import { saveData, SaveHasil, SaveHasilSumber } from "@/app/server/action";
+import { getKwhPricesInRange, saveData, SaveHasil, SaveHasilSumber } from "@/app/server/action";
 import EnhancedStatCard from "./StatusCard";
 
 import {
@@ -62,24 +62,23 @@ const MQTTData = () => {
   const [electricalBillHours, setElectricalBillHours] = useState<number>(0);
   const [hourlyEnergyBuffer, setHourlyEnergyBuffer] = useState<number[]>([]);
 
-//  const now = new Date();
-// const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+ const now = new Date();
+const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
 
-// // Ambil tanggal terakhir bulan ini
-// const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+// Ambil tanggal terakhir bulan ini
+const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
 // Format ke string YYYY-MM-DD
-// const formatDate = (date) => {
-//   const year = date.getFullYear();
-//   const month = String(date.getMonth() + 1).padStart(2, '0');
-//   const day = String(date.getDate()).padStart(2, '0');
-//   return `${year}-${month}-${day}`;
-// };
+const formatDate = (date:any) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
-// const startDate = formatDate(firstDay); // "YYYY-MM-01"
-// const endDate = formatDate(lastDay);  
-//   const result =  getKwhPricesInRange(startDate, endDate);
-// console.log(result);
+const startDate = formatDate(firstDay); // "YYYY-MM-01"
+const endDate = formatDate(lastDay);  
+  const result =  getKwhPricesInRange(startDate, endDate);
 
   // Calibration States
   const [inputKalibrasiR, setInputKalibrasiR] = useState<number>(0);
@@ -252,24 +251,47 @@ const MQTTData = () => {
     }
   }, [energyRecords]);
 
+  
   // Update monthly energy every hour
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (hourlyEnergyBuffer.length > 0) {
+useEffect(() => {
+  const fetchAndSetTotalKwh = async () => {
+    try {
+      // Ambil total KWH dari database
+      const dbData = await getKwhPricesInRange(startDate, endDate);
+      const totalKwhFromDB = dbData.reduce((sum, item) => sum + item.kwh, 0);
 
-        const averageHourlyEnergy =
-          hourlyEnergyBuffer.reduce((sum, kwh) => sum + kwh, 0) /
-          hourlyEnergyBuffer.length;
-        setTotalEnergyMonth((prev) => prev + averageHourlyEnergy);
-        setHourlyEnergyBuffer([]);
-        console.log(
-          `✅ Hourly average added: ${averageHourlyEnergy.toFixed(3)} kWh`
-        );
-      }
-    }, 3600000); // 1 hour
+      // Hitung rata-rata dari buffer (kalau ada)
+      const averageHourlyEnergy =
+        hourlyEnergyBuffer.length > 0
+          ? hourlyEnergyBuffer.reduce((sum, kwh) => sum + kwh, 0) /
+            hourlyEnergyBuffer.length
+          : 0;
 
-    return () => clearInterval(interval);
-  }, [hourlyEnergyBuffer]);
+      // Gabungkan hasil
+      const newTotal = totalKwhFromDB + averageHourlyEnergy;
+      setTotalEnergyMonth(newTotal);
+
+      console.log(
+        `📊 Initial load: DB Total ${totalKwhFromDB.toFixed(
+          3
+        )} kWh + Buffer ${averageHourlyEnergy.toFixed(
+          3
+        )} kWh = ${newTotal.toFixed(3)} kWh`
+      );
+    } catch (err) {
+      console.error("❌ Error fetching KWH from DB:", err);
+    }
+  };
+
+  // Panggilan pertama saat komponen mount
+  fetchAndSetTotalKwh();
+
+  // Interval tiap 1 jam
+  const interval = setInterval(fetchAndSetTotalKwh, 3600000);
+
+  return () => clearInterval(interval);
+}, [hourlyEnergyBuffer, startDate, endDate]);
+
 
   // Calculate electrical bill
   useEffect(() => {
