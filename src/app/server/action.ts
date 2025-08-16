@@ -18,6 +18,19 @@ export async function saveData(avgampere:number, avgvoltase:number, avg: number,
   }
 }
 
+
+export async function getKwh() {
+  try {
+    const kwhPrices = await prisma.kwhPrice.findMany();
+    return kwhPrices;
+  } catch (error) {
+    console.error("Error saat ambil data kwhPrice:", error);
+    throw error;
+  }
+}
+
+
+
 export async function getKwhPricesInRange(startDate: string, endDate: string) {
   try {
     const kwhPrices = await prisma.kwhPrice.findMany({

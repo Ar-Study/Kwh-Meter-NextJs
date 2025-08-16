@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { client } from "../lib/mqtt-client";
-import { getKwhPricesInRange, saveData, SaveHasil, SaveHasilSumber } from "@/app/server/action";
+import { getKwh, getKwhPricesInRange, saveData, SaveHasil, SaveHasilSumber } from "@/app/server/action";
 import EnhancedStatCard from "./StatusCard";
 
 import {
@@ -59,14 +59,21 @@ const MQTTData = () => {
   const [avgVoltage, setAvgVoltage] = useState<number>(0);
   const [energyRecords, setEnergyRecords] = useState<number[]>([]);
   const [totalEnergyMonth, setTotalEnergyMonth] = useState<number>(0);
+  const [totalKwh, setTotalKwh] = useState<number>(0);
+  const [TodayKwh, setTodayKwh] = useState<number>(0);
+  const [YesterdayKwh, setYesterdayKwh] = useState<number>(0);
   const [electricalBillHours, setElectricalBillHours] = useState<number>(0);
   const [hourlyEnergyBuffer, setHourlyEnergyBuffer] = useState<number[]>([]);
 
  const now = new Date();
 const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() -1, 0, 0, 0);
 
 // Ambil tanggal terakhir bulan ini
 const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+const endOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59);
 
 // Format ke string YYYY-MM-DD
 const formatDate = (date:any) => {
@@ -77,8 +84,12 @@ const formatDate = (date:any) => {
 };
 
 const startDate = formatDate(firstDay); // "YYYY-MM-01"
+const startDateToday = formatDate(startOfToday); // "YYYY-MM-DD"
+const endDateToday = formatDate(endOfToday); // "YYYY-MM-DD"
+const startDateYesterday = formatDate(startOfYesterday); // "YYYY-MM-DD"
+const endDateYesterday = formatDate(endOfYesterday); // "YYYY-MM-DD"
 const endDate = formatDate(lastDay);  
-  const result =  getKwhPricesInRange(startDate, endDate);
+
 
   // Calibration States
   const [inputKalibrasiR, setInputKalibrasiR] = useState<number>(0);
@@ -258,8 +269,14 @@ useEffect(() => {
     try {
       // Ambil total KWH dari database
       const dbData = await getKwhPricesInRange(startDate, endDate);
-      const totalKwhFromDB = dbData.reduce((sum, item) => sum + item.kwh, 0);
+      const dbDataToday = await getKwhPricesInRange(startDateToday, endDateToday);
+      const dbDataYesterday = await getKwhPricesInRange(startDateYesterday, endDateYesterday);
+      const dbTotalKwh = await getKwh();
 
+      const totalKwhFromDB = dbData.reduce((sum, item) => sum + item.kwh, 0);
+      const totalKwhUnlimitedFromDB = dbTotalKwh.reduce((sum, item) => sum + item.kwh, 0);
+      const totalKwhToday = dbDataToday.reduce((sum, item) => sum + item.kwh, 0);
+      const totalKwhYesterday = dbDataYesterday.reduce((sum, item) => sum + item.kwh, 0);
       // Hitung rata-rata dari buffer (kalau ada)
       const averageHourlyEnergy =
         hourlyEnergyBuffer.length > 0
@@ -268,8 +285,13 @@ useEffect(() => {
           : 0;
 
       // Gabungkan hasil
+      const newTotalToday = totalKwhToday + averageHourlyEnergy;
       const newTotal = totalKwhFromDB + averageHourlyEnergy;
+      const totalKwhUnlimited = totalKwhUnlimitedFromDB + averageHourlyEnergy;
       setTotalEnergyMonth(newTotal);
+      setTotalKwh(totalKwhUnlimited);
+      setTodayKwh(newTotalToday);
+      setYesterdayKwh(totalKwhYesterday);
 
       console.log(
         `📊 Initial load: DB Total ${totalKwhFromDB.toFixed(
@@ -478,7 +500,7 @@ useEffect(() => {
         />
         <EnhancedStatCard
           title="Today's Consumption"
-          value={totalEnergy.toFixed(2)}
+          value={TodayKwh.toFixed(2)}
           unit="kWh"
           delta={{ value: "Daily reset at 00:00 WIB", isPositive: true }}
           icon={<Zap size={24} />}
@@ -504,8 +526,9 @@ useEffect(() => {
         style={{ animationDelay: "0.1s" }}
       >
         <EnhancedStatCard
-          title="Today's Cost (Auto-Reset)"
-          value={formatCurrency(electricalBillHours)}
+          title="Total Yesterday's Consumptions (Auto-Reset)"
+          value={YesterdayKwh.toFixed(2)}
+          unit="kWh"
           delta={{
             value: `LWBP: ${formatCurrency(LWBP_RATE)} | WBP: ${formatCurrency(
               WBP_RATE
@@ -516,14 +539,15 @@ useEffect(() => {
           subtitle="Auto-resets daily at midnight (WIB)"
         />
         <EnhancedStatCard
-          title="Monthly Estimate"
-          value={formatCurrency(totalEnergyMonth * getTariff())}
+          title="KWH Total"
+          value={`${Math.floor(totalKwh).toFixed(2)}`}
+          unit="kWh"
           delta={{
-            value: `Based on ${Math.floor(totalEnergyMonth)} kWh total`,
+            value: `Based on ${Math.floor(totalKwh)} kWh total`,
             isPositive: true,
           }}
           icon={<TrendingUp size={24} />}
-          subtitle={`Monthly total: ${totalEnergyMonth.toFixed(2)} kWh`}
+          subtitle={`Total Kwh: ${totalKwh.toFixed(2)} kWh`}
         />
       </div>
 
